@@ -27,8 +27,8 @@ public abstract class AbstractTest {
   public static String getApiKey() {
     return apiKey;
   }
-
   public static String getBaseUrl() {
     return baseUrl;
   }
+
 }
