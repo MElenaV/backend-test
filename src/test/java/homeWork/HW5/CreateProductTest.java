@@ -1,4 +1,4 @@
-package lesson5;
+package homeWork.HW5;
 
 import com.github.javafaker.Faker;
 import lesson5.api.ProductService;
@@ -7,6 +7,7 @@ import lesson5.utils.RetrofitUtils;
 import lombok.SneakyThrows;
 import okhttp3.ResponseBody;
 import org.hamcrest.CoreMatchers;
+import static org.hamcrest.CoreMatchers.is;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,31 +49,23 @@ public class CreateProductTest {
   }
 
   @Test
-  void createProductWithoutTitleInFoodCategoryTest() throws IOException {
-    Product productWithoutTitle = null;
-    productWithoutTitle = new Product()
-            .withCategoryTitle("Food")
-            .withPrice((int) (Math.random() * 10000));
-
-    Response<Product> response = productService.createProduct(productWithoutTitle)
+  void createProductWithZeroPriceInFoodCategoryTest() throws IOException {
+    Response<Product> response = productService.createProduct(product.withPrice(0))
             .execute();
     id =  response.body().getId();
+    assertThat(response.body().getPrice(), is(0));
     assertThat(response.isSuccessful(), CoreMatchers.is(true));
   }
 
   @Test
-  void createProductWithoutPriceInFoodCategoryTest() throws IOException {
-    Product productWithoutPrice = null;
-    productWithoutPrice = new Product()
-            .withTitle(faker.food().ingredient())
-            .withCategoryTitle("Food");
-
-    Response<Product> response = productService.createProduct(productWithoutPrice)
+  void createProductWithEmptyTitleInFoodCategoryTest() throws IOException {
+    Response<Product> response = productService.createProduct(product.withTitle(""))
             .execute();
     id =  response.body().getId();
+    assertThat(response.body().getTitle(), is(""));
     assertThat(response.isSuccessful(), CoreMatchers.is(true));
-    assertThat(response.body().getPrice(), CoreMatchers.is(0));
   }
+
 
   @SneakyThrows
   @AfterEach
