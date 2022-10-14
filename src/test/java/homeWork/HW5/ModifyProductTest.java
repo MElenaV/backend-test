@@ -8,16 +8,12 @@ import lesson6.db.dao.ProductsMapper;
 import lesson6.db.model.Products;
 import lesson6.db.model.ProductsExample;
 import lombok.SneakyThrows;
-import okhttp3.ResponseBody;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.hamcrest.CoreMatchers;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import retrofit2.Response;
 
 import java.io.IOException;
@@ -32,7 +28,7 @@ public class ModifyProductTest {
   Product product = null;
   Product modifyProduct = null;
   Faker faker = new Faker();
-  int id;
+  Long id;
   String title;
   String categoryTitle;
   int price;
@@ -64,13 +60,13 @@ public class ModifyProductTest {
             .withPrice((int) (Math.random() * 10000));
     Response<Product> response = productService.createProduct(product)
             .execute();
-    id =  response.body().getId();
+    id =  response.body().getId().longValue();
   }
 
   @Test
   void modifyTitleProductInFoodCategoryTest() throws IOException {
     modifyProduct = new Product()
-            .withId(id)
+            .withId(Math.toIntExact(id))
             .withTitle("Новый продукт")
             .withCategoryTitle(product.getCategoryTitle())
             .withPrice(product.getPrice());
@@ -82,14 +78,17 @@ public class ModifyProductTest {
     assertThat(title, CoreMatchers.is(modifyProduct.getTitle()));
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
-    List<Products> list = (List<Products>) productsMapper.selectByPrimaryKey(id);
+    ProductsExample example = new ProductsExample();
+    example.createCriteria().andIdEqualTo(id);
+
+    List<Products> list = productsMapper.selectByExample(example);
     assertThat(modifyProduct.getTitle(), CoreMatchers.is(list.get(0).getTitle()));
   }
 
   @Test
   void modifyCategoryTitleProductInFoodCategoryTest() throws IOException {
     modifyProduct = new Product()
-            .withId(id)
+            .withId(Math.toIntExact(id))
             .withTitle(product.getTitle())
             .withCategoryTitle("Electronic")
             .withPrice(product.getPrice());
@@ -103,7 +102,8 @@ public class ModifyProductTest {
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
     ProductsExample example = new ProductsExample();
-    example.createCriteria().andTitleLike("%Food%");
+    example.createCriteria().andIdEqualTo(modifyProduct.getId().longValue());
+
     List<Products> list2 = productsMapper.selectByExample(example);
     Products modifyProduct2 = list2.get(0);
     modifyProduct2.setTitle("Food2");
@@ -114,7 +114,7 @@ public class ModifyProductTest {
   @Test
   void modifyPriceProductInFoodCategoryTest() throws IOException {
     modifyProduct = new Product()
-            .withId(id)
+            .withId(Math.toIntExact(id))
             .withTitle(product.getTitle())
             .withCategoryTitle(product.getCategoryTitle())
             .withPrice(999);
@@ -127,14 +127,17 @@ public class ModifyProductTest {
     assertThat(price, CoreMatchers.is(modifyProduct.getPrice()));
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
-    List<Products> list = (List<Products>) productsMapper.selectByPrimaryKey(id);
+    ProductsExample example = new ProductsExample();
+    example.createCriteria().andIdEqualTo(id);
+
+    List<Products> list = productsMapper.selectByExample(example);
     assertThat(modifyProduct.getPrice(), CoreMatchers.is(list.get(0).getPrice()));
   }
 
   @Test
   void modifyProductInFoodCategoryTest() throws IOException {
     modifyProduct = new Product()
-            .withId(id)
+            .withId(Math.toIntExact(id))
             .withTitle("Новый продукт")
             .withCategoryTitle("Electronic")
             .withPrice(999);
@@ -151,7 +154,10 @@ public class ModifyProductTest {
     assertThat(price, CoreMatchers.is(modifyProduct.getPrice()));
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
-    List<Products> list = (List<Products>) productsMapper.selectByPrimaryKey(id);
+    ProductsExample example = new ProductsExample();
+    example.createCriteria().andIdEqualTo(id);
+
+    List<Products> list = productsMapper.selectByExample(example);
     assertThat(modifyProduct.getPrice(), CoreMatchers.is(list.get(0).getPrice()));
     assertThat(modifyProduct.getTitle(), CoreMatchers.is(list.get(0).getTitle()));
   }
@@ -172,7 +178,10 @@ public class ModifyProductTest {
     assertThat(response.code(), CoreMatchers.is(400));
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
-    List<Products> list = (List<Products>) productsMapper.selectByPrimaryKey(id);
+    ProductsExample example = new ProductsExample();
+    example.createCriteria().andIdEqualTo(id);
+
+    List<Products> list = productsMapper.selectByExample(example);
     assertThat(id, CoreMatchers.is(list.get(0).getId()));
   }
 
@@ -180,11 +189,16 @@ public class ModifyProductTest {
   @SneakyThrows
   @AfterEach
   void tearDown() {
-    Response<ResponseBody> response = productService.deleteProduct(id).execute();
-    assertThat(response.isSuccessful(), CoreMatchers.is(true));
+  //  Response<ResponseBody> response = productService.deleteProduct(id).execute();
+ //   assertThat(response.isSuccessful(), CoreMatchers.is(true));
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
     productsMapper.deleteByPrimaryKey(id);
+  }
+
+  @SneakyThrows
+  @AfterAll
+  static void tearDownAll() {
     session.close();
   }
 }

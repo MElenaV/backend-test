@@ -9,11 +9,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import static jdk.nashorn.internal.objects.NativeError.printStackTrace;
 
 
 public class ExampleMain {
 
-  public static void main( String[] args ) throws IOException {
+  public static void main( String[] args ) throws Exception {
     SqlSession session = null;
     try {
       String resource = "mybatis-config.xml";
@@ -43,7 +44,10 @@ public class ExampleMain {
       categoriesMapper.deleteByPrimaryKey(categories2.getId());
       session.commit();
 
-    } finally {
+    }
+    catch (Exception e) {
+      System.out.println(e);}
+    finally {
       session.close();
     }
 

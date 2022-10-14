@@ -6,6 +6,7 @@ import lesson5.dto.Product;
 import lesson5.utils.RetrofitUtils;
 import lesson6.db.dao.ProductsMapper;
 import lesson6.db.model.Products;
+import lesson6.db.model.ProductsExample;
 import lombok.SneakyThrows;
 import okhttp3.ResponseBody;
 import org.apache.ibatis.io.Resources;
@@ -13,6 +14,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 import org.hamcrest.CoreMatchers;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +30,7 @@ public class DeleteProductTest {
   static ProductService productService;
   Product product = null;
   Faker faker = new Faker();
-  int id;
+  Long id;
 
   static SqlSession session = null;
   static String resource = "mybatis-config.xml";
@@ -57,18 +59,21 @@ public class DeleteProductTest {
             .withPrice((int) (Math.random() * 10000));
     Response<Product> response = productService.createProduct(product)
             .execute();
-    id = response.body().getId();
+    id = response.body().getId().longValue();
   }
 
   @SneakyThrows
   @Test
   void deleteProduct() {
-    Response<ResponseBody> response = productService.deleteProduct(id).execute();
+    Response<ResponseBody> response = productService.deleteProduct(Math.toIntExact(id)).execute();
     assertThat(response.isSuccessful(), CoreMatchers.is(true));
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
-    List<Products> list = (List<Products>) productsMapper.selectByPrimaryKey(id);
-    assertThat(CoreMatchers.is(list.get(0).getId()), null);
+    ProductsExample example = new ProductsExample();
+    example.createCriteria().andIdEqualTo(id);
+
+    List<Products> list = productsMapper.selectByExample(example);
+    assertThat(list.isEmpty(), CoreMatchers.is(true));
   }
 
   @SneakyThrows
@@ -80,9 +85,17 @@ public class DeleteProductTest {
     assertThat(response.code(), CoreMatchers.is(500));
 
     ProductsMapper productsMapper = session.getMapper(ProductsMapper.class);
-    List<Products> list = (List<Products>) productsMapper.selectByPrimaryKey(id);
+    ProductsExample example = new ProductsExample();
+    example.createCriteria().andIdEqualTo(id);
+
+    List<Products> list = productsMapper.selectByExample(example);
     assertThat(id, CoreMatchers.is(list.get(0).getId()));
     productsMapper.deleteByPrimaryKey(id);
+  }
+
+  @SneakyThrows
+  @AfterAll
+  static void tearDownAll() {
     session.close();
   }
 
